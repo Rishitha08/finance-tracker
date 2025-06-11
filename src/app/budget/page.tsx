@@ -47,6 +47,8 @@ export default function BudgetPage() {
   const [showForm, setShowForm] = useState(false)
   const [editingBudget, setEditingBudget] = useState<string | null>(null)
   const [editAmount, setEditAmount] = useState('')
+  const [editLoading, setEditLoading] = useState<string | null>(null)
+  const [deleteLoading, setDeleteLoading] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     category: '',
     amount: '',
@@ -208,13 +210,6 @@ export default function BudgetPage() {
     const currentMonth = new Date().getMonth() + 1
     const currentYear = new Date().getFullYear()
     
-    console.log('Calculating budgets with:', {
-      budgetsCount: budgetsFromAPI.length,
-      transactionsCount: transactionsData.length,
-      currentMonth,
-      currentYear
-    })
-
     // Group expenses by category for current month
     const categorySpending = new Map<string, number>()
     
@@ -224,44 +219,23 @@ export default function BudgetPage() {
       const isCurrentMonth = date.getMonth() + 1 === currentMonth
       const isCurrentYear = date.getFullYear() === currentYear
       
-      console.log('Transaction:', {
-        description: t.category,
-        amount: t.amount,
-        date: t.date,
-        isExpense,
-        isCurrentMonth,
-        isCurrentYear,
-        include: isExpense && isCurrentMonth && isCurrentYear
-      })
-      
       return isExpense && isCurrentMonth && isCurrentYear
     })
-
-    console.log('Current month expense transactions:', currentMonthTransactions.length)
 
     currentMonthTransactions.forEach(t => {
       const current = categorySpending.get(t.category) || 0
       categorySpending.set(t.category, current + t.amount)
-      console.log(`Category ${t.category}: ${current} + ${t.amount} = ${current + t.amount}`)
     })
 
-    console.log('Category spending map:', Object.fromEntries(categorySpending))
+    const budgetData = budgetsFromAPI.map(budget => ({
+      id: budget.id,
+      category: budget.category,
+      amount: budget.amount,
+      spent: categorySpending.get(budget.category) || 0,
+      month: budget.month,
+      year: budget.year
+    }))
 
-    const budgetData = budgetsFromAPI.map(budget => {
-      const spent = categorySpending.get(budget.category) || 0
-      console.log(`Budget ${budget.category}: amount=${budget.amount}, spent=${spent}`)
-      
-      return {
-        id: budget.id,
-        category: budget.category,
-        amount: budget.amount,
-        spent: spent,
-        month: budget.month,
-        year: budget.year
-      }
-    })
-
-    console.log('Final budget data:', budgetData)
     setBudgets(budgetData)
   }
 
@@ -358,13 +332,22 @@ export default function BudgetPage() {
     }
   }
 
+  // FIXED: Edit budget function with proper error handling
   const handleEditBudget = async (budgetId: string, newAmount: string) => {
+    const amount = parseFloat(newAmount)
+    if (isNaN(amount) || amount <= 0) {
+      alert('Please enter a valid amount greater than 0')
+      return
+    }
+
+    setEditLoading(budgetId)
+    
     try {
       const response = await fetch(`/api/budgets/${budgetId}`, {
         method: 'PUT',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: parseFloat(newAmount) })
+        body: JSON.stringify({ amount: amount })
       })
 
       if (response.ok) {
@@ -372,9 +355,45 @@ export default function BudgetPage() {
         setEditAmount('')
         await fetchData()
         await fetchBudgetChartData()
+      } else {
+        const errorData = await response.json()
+        alert(errorData.error || 'Failed to update budget')
       }
     } catch (error) {
       console.error('Failed to update budget:', error)
+      alert('Network error. Please try again.')
+    } finally {
+      setEditLoading(null)
+    }
+  }
+
+  // NEW: Delete budget function
+  const handleDeleteBudget = async (budgetId: string, category: string) => {
+    if (!confirm(`Are you sure you want to delete the budget for ${category}?`)) {
+      return
+    }
+
+    setDeleteLoading(budgetId)
+    
+    try {
+      const response = await fetch(`/api/budgets/${budgetId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' }
+      })
+
+      if (response.ok) {
+        await fetchData()
+        await fetchBudgetChartData()
+      } else {
+        const errorData = await response.json()
+        alert(errorData.error || 'Failed to delete budget')
+      }
+    } catch (error) {
+      console.error('Failed to delete budget:', error)
+      alert('Network error. Please try again.')
+    } finally {
+      setDeleteLoading(null)
     }
   }
 
@@ -614,12 +633,14 @@ export default function BudgetPage() {
             </div>
           )}
 
-          {/* Editable Budget Cards with Fixed Calculations */}
+          {/* FIXED: Editable Budget Cards with Working Tick Button and Delete Button */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {budgets.map((budget) => {
               const percentage = budget.amount > 0 ? (budget.spent / budget.amount) * 100 : 0
               const isOverBudget = percentage > 100
               const isEditing = editingBudget === budget.id
+              const isEditLoading = editLoading === budget.id
+              const isDeleteLoading = deleteLoading === budget.id
               
               return (
                 <Card key={budget.id} className="samsung-card">
@@ -627,9 +648,20 @@ export default function BudgetPage() {
                     <div className="space-y-4">
                       <div className="flex justify-between items-start">
                         <h3 className="font-bold text-slate-900 text-lg">{budget.category}</h3>
-                        <span className="text-sm text-slate-600 bg-slate-100 px-2 py-1 rounded">
-                          {budget.month}/{budget.year}
-                        </span>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm text-slate-600 bg-slate-100 px-2 py-1 rounded">
+                            {budget.month}/{budget.year}
+                          </span>
+                          {/* DELETE BUTTON */}
+                          <Button
+                            size="sm"
+                            onClick={() => handleDeleteBudget(budget.id, budget.category)}
+                            disabled={isDeleteLoading || isEditing}
+                            className="h-6 px-2 text-xs bg-red-500 hover:bg-red-600 text-white"
+                          >
+                            {isDeleteLoading ? '...' : '🗑️'}
+                          </Button>
+                        </div>
                       </div>
                       
                       <div className="space-y-2">
@@ -641,21 +673,26 @@ export default function BudgetPage() {
                               <div className="flex items-center space-x-1">
                                 <Input
                                   type="number"
+                                  step="0.01"
                                   value={editAmount}
                                   onChange={(e) => setEditAmount(e.target.value)}
                                   className="w-20 h-6 text-xs px-1"
                                   style={{ color: '#1e293b', backgroundColor: 'white' }}
+                                  disabled={isEditLoading}
                                 />
+                                {/* FIXED TICK BUTTON */}
                                 <Button
                                   size="sm"
                                   onClick={() => handleEditBudget(budget.id, editAmount)}
+                                  disabled={isEditLoading}
                                   className="h-6 px-2 text-xs bg-green-500 hover:bg-green-600 text-white"
                                 >
-                                  ✓
+                                  {isEditLoading ? '...' : '✓'}
                                 </Button>
                                 <Button
                                   size="sm"
                                   onClick={cancelEditing}
+                                  disabled={isEditLoading}
                                   className="h-6 px-2 text-xs bg-red-500 hover:bg-red-600 text-white"
                                 >
                                   ✕
@@ -667,6 +704,7 @@ export default function BudgetPage() {
                                 <Button
                                   size="sm"
                                   onClick={() => startEditing(budget.id, budget.amount)}
+                                  disabled={isDeleteLoading}
                                   className="h-6 px-2 text-xs bg-blue-500 hover:bg-blue-600 text-white"
                                 >
                                   ✏️
