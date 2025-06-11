@@ -367,7 +367,7 @@ export default function BudgetPage() {
     }
   }
 
-  // NEW: Delete budget function
+  // FIXED: Delete budget function
   const handleDeleteBudget = async (budgetId: string, category: string) => {
     if (!confirm(`Are you sure you want to delete the budget for ${category}?`)) {
       return
@@ -444,7 +444,7 @@ export default function BudgetPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-200">
-      {/* Black Header with Samsung Blue Accents */}
+      {/* Header remains the same */}
       <header className="bg-black shadow-lg border-b border-gray-800 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
@@ -499,7 +499,7 @@ export default function BudgetPage() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-8">
-          {/* Dynamic Budget vs Actual Comparison Chart */}
+          {/* Chart and form sections remain the same */}
           <Card className="samsung-card">
             <CardHeader>
               <CardTitle className="text-xl font-bold text-slate-900">Budget vs Actual Spending</CardTitle>
@@ -510,7 +510,6 @@ export default function BudgetPage() {
             </CardContent>
           </Card>
 
-          {/* Add Budget Button */}
           <div className="flex justify-between items-center">
             <h2 className="text-2xl font-bold text-slate-900">Monthly Budgets</h2>
             <Button 
@@ -521,7 +520,7 @@ export default function BudgetPage() {
             </Button>
           </div>
 
-          {/* Budget Form Modal with RED CANCEL BUTTON */}
+          {/* Budget Form Modal */}
           {showForm && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
               <Card className="w-full max-w-md mx-4 samsung-card">
@@ -603,7 +602,6 @@ export default function BudgetPage() {
                       </div>
                     </div>
 
-                    {/* Fixed Button Styling with RED CANCEL */}
                     <div className="flex space-x-3 pt-4">
                       <Button 
                         type="button"
@@ -633,7 +631,7 @@ export default function BudgetPage() {
             </div>
           )}
 
-          {/* FIXED: Editable Budget Cards with Working Tick Button and Delete Button */}
+          {/* FIXED: Budget Cards with Working Edit and Delete Buttons */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {budgets.map((budget) => {
               const percentage = budget.amount > 0 ? (budget.spent / budget.amount) * 100 : 0
@@ -652,15 +650,15 @@ export default function BudgetPage() {
                           <span className="text-sm text-slate-600 bg-slate-100 px-2 py-1 rounded">
                             {budget.month}/{budget.year}
                           </span>
-                          {/* DELETE BUTTON */}
-                          <Button
-                            size="sm"
+                          {/* WORKING DELETE BUTTON */}
+                          <button
                             onClick={() => handleDeleteBudget(budget.id, budget.category)}
                             disabled={isDeleteLoading || isEditing}
-                            className="h-6 px-2 text-xs bg-red-500 hover:bg-red-600 text-white"
+                            className="h-6 w-6 text-xs bg-red-500 hover:bg-red-600 text-white rounded flex items-center justify-center disabled:opacity-50"
+                            title="Delete Budget"
                           >
                             {isDeleteLoading ? '...' : '🗑️'}
-                          </Button>
+                          </button>
                         </div>
                       </div>
                       
@@ -671,44 +669,44 @@ export default function BudgetPage() {
                             <span className="text-slate-600">Budget:</span>
                             {isEditing ? (
                               <div className="flex items-center space-x-1">
-                                <Input
+                                <input
                                   type="number"
                                   step="0.01"
                                   value={editAmount}
                                   onChange={(e) => setEditAmount(e.target.value)}
-                                  className="w-20 h-6 text-xs px-1"
+                                  className="w-20 h-6 text-xs px-1 border rounded"
                                   style={{ color: '#1e293b', backgroundColor: 'white' }}
                                   disabled={isEditLoading}
                                 />
-                                {/* FIXED TICK BUTTON */}
-                                <Button
-                                  size="sm"
+                                {/* WORKING TICK BUTTON */}
+                                <button
                                   onClick={() => handleEditBudget(budget.id, editAmount)}
                                   disabled={isEditLoading}
-                                  className="h-6 px-2 text-xs bg-green-500 hover:bg-green-600 text-white"
+                                  className="h-6 w-6 text-xs bg-green-500 hover:bg-green-600 text-white rounded flex items-center justify-center disabled:opacity-50"
+                                  title="Save Changes"
                                 >
                                   {isEditLoading ? '...' : '✓'}
-                                </Button>
-                                <Button
-                                  size="sm"
+                                </button>
+                                <button
                                   onClick={cancelEditing}
                                   disabled={isEditLoading}
-                                  className="h-6 px-2 text-xs bg-red-500 hover:bg-red-600 text-white"
+                                  className="h-6 w-6 text-xs bg-red-500 hover:bg-red-600 text-white rounded flex items-center justify-center"
+                                  title="Cancel"
                                 >
                                   ✕
-                                </Button>
+                                </button>
                               </div>
                             ) : (
                               <div className="flex items-center space-x-1">
                                 <span className="text-slate-600">{formatCurrency(budget.amount)}</span>
-                                <Button
-                                  size="sm"
+                                <button
                                   onClick={() => startEditing(budget.id, budget.amount)}
                                   disabled={isDeleteLoading}
-                                  className="h-6 px-2 text-xs bg-blue-500 hover:bg-blue-600 text-white"
+                                  className="h-6 w-6 text-xs bg-blue-500 hover:bg-blue-600 text-white rounded flex items-center justify-center"
+                                  title="Edit Budget"
                                 >
                                   ✏️
-                                </Button>
+                                </button>
                               </div>
                             )}
                           </div>
@@ -741,7 +739,7 @@ export default function BudgetPage() {
                         </div>
                       </div>
 
-                      {/* Over Budget Alert - Now Working */}
+                      {/* Over Budget Alert */}
                       {isOverBudget && (
                         <div className="bg-red-50 border border-red-200 rounded-lg p-3 animate-pulse">
                           <div className="flex items-center">
@@ -787,7 +785,7 @@ export default function BudgetPage() {
             </div>
           )}
 
-          {/* Financial Insights */}
+          {/* Financial Insights section remains the same */}
           <Card className="samsung-card">
             <CardHeader>
               <CardTitle>Budget Insights & Spending Trends</CardTitle>
@@ -820,7 +818,6 @@ export default function BudgetPage() {
                 </div>
               </div>
 
-              {/* Spending Insights */}
               <div className="border-t pt-6">
                 <h3 className="font-semibold text-slate-800 mb-4">Smart Insights</h3>
                 <div className="space-y-3">
