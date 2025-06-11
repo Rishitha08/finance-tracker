@@ -237,7 +237,7 @@ finance-tracker/
 
 ---
 
-Live Deployement Link: 
+Live Deployement Link: https://finance-tracker-oiwg.onrender.com/auth/login
 
 
 
