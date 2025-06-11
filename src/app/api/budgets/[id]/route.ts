@@ -1,39 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { cookies } from 'next/headers'
-import jwt from 'jsonwebtoken'
-
-// Helper function to get user from token
-async function getUserFromToken(request: NextRequest) {
-  try {
-    const cookieStore = cookies()
-    const token = cookieStore.get('token')?.value
-    
-    if (!token) {
-      return null
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string }
-    return decoded.userId
-  } catch (error) {
-    return null
-  }
-}
 
 // UPDATE Budget
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userId = await getUserFromToken(request)
+    const userId = request.headers.get('userId')
     
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
     const { amount } = await request.json()
-    const { id } = params
 
     if (!amount || amount <= 0) {
       return NextResponse.json({ error: 'Amount must be greater than 0' }, { status: 400 })
@@ -53,8 +34,12 @@ export async function PUT(
 
     // Update the budget
     const updatedBudget = await prisma.budget.update({
-      where: { id },
-      data: { amount: parseFloat(amount) }
+      where: {
+        id
+      },
+      data: {
+        amount: parseFloat(amount)
+      }
     })
 
     return NextResponse.json(updatedBudget)
@@ -67,16 +52,16 @@ export async function PUT(
 // DELETE Budget
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userId = await getUserFromToken(request)
+    const userId = request.headers.get('userId')
     
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { id } = params
+    const { id } = await params
 
     // Check if budget exists and belongs to user
     const existingBudget = await prisma.budget.findFirst({
@@ -92,7 +77,9 @@ export async function DELETE(
 
     // Delete the budget
     await prisma.budget.delete({
-      where: { id }
+      where: {
+        id
+      }
     })
 
     return NextResponse.json({ message: 'Budget deleted successfully' })
