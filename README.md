@@ -55,9 +55,7 @@ Built with a modern tech stack and a focus on clean UI/UX, FinSight transforms t
 
 ---
 
-## **Screenshots**
-
-> **Add your UI/UX screenshots below. Place images in a `/screenshots` folder and reference them like this:**
+## **Screenshots*
 
 ### **Dashboard**
 ![Dashboard Screenshot](screenshots/dashboardTransactions**
