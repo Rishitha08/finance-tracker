@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: finance-tracker
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        value: postgresql://financetrackerdb_6m68_user:9NQQs6WlZALBJqXDlIjy2uJ7gsHROk04@dpg-d29341m3jp1c73e877rg-a.oregon-postgres.render.com/financetrackerdb_6m68
+      - key: NEXTAUTH_SECRET
+        generateValue: true
+      - key: NEXTAUTH_URL
+        value: https://finance-tracker.onrender.com
